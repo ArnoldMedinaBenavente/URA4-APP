@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">MiddlewareUran</string>
+    <string name="txt_options">Opciones</string>
+    <string-array name="power_antenna_values">
+        <item>30</item>
+        <item>25</item>
+        <item>20</item>
+        <item>15</item>
+        <item>10</item>
+        <item>5</item>
+    </string-array>
+
+    <string-array name="areas_array">
+        <item>Proceso</item>
+        <item>Terminado</item>
+
+    </string-array>
+
+
+    <string-array name="opciones_array">
+        <item>Actualizar posiciones</item>
+        <item>Actualizar galeras</item>
+        <item>Seleccionar galera</item>
+        <item>Actualizar todo</item>
+    </string-array>
+
+</resources>
