@@ -19,6 +19,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
@@ -35,6 +36,7 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
+import com.middlewareUran.Objects.Cages;
 import com.middlewareUran.Objects.ItemReadingLog;
 import com.middlewareUran.Objects.Spots;
 import com.middlewareUran.Objects.Station;
@@ -68,6 +70,7 @@ public class ServicioAPI extends Service {
     boolean enviadoCorrecto = true;
     //Variabl de powerAntenna
     int powerAntenna;
+    int timeAntenna;
     boolean loopFlag = false;
     //Variable de tiempo de espera
     int TIME_WAIT_3_MINUTE_IN_MILISEGUNDOS = 20000;
@@ -94,13 +97,15 @@ public class ServicioAPI extends Service {
     ArrayList<String> items_noRepeat = new ArrayList<>();
     ArrayList<ArrayList<ItemReadingLog>> works_array = new ArrayList<>();
     Spots spotSelected = null;
+    Cages cageSelected = null;
+    String idCageSelected = "";
    String  idSpotSelected = "";
     String idTurno = "";
     String codeTurno = "";
     @SuppressLint("HandlerLeak")
     public Handler handler = new Handler() {
         @Override
-        public void handleMessage(Message msg) {
+        public void handleMessage(Message msg) {///este metodo envia lee los tags rfid
             if(msg.what==1) {
                 UHFTAGInfo info = (UHFTAGInfo) msg.obj;
                 //   addDataToList(mergeTidEpc(info.getTid(), info.getEPC()), info.getRssi(), info.getAnt());
@@ -123,7 +128,7 @@ public class ServicioAPI extends Service {
                             if (cursor.moveToFirst()) {// si existe en la bd
                                 MainActivity.showOnListView(info.getEPC(),info.getAnt(),String.valueOf(info.getCount()));
                                 SendDataToServer(info.getEPC(), String.valueOf(info.getCount()), info.getRssi(), info.getAnt());
-
+                                playSound();
                             }
                         } catch (Exception e) {
                             Log.e("Database Error", "Error while reading database", e);
@@ -160,16 +165,17 @@ public class ServicioAPI extends Service {
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        //Obtener powerAntenna de MainActivity
+        //Obtener powerAntenna y timeAntenna de MainActivity
         Bundle extras = intent.getExtras();
         if (extras != null) {
             powerAntenna = extras.getInt("powerAntenna");
+            timeAntenna = extras.getInt("timeAntenna");
             //reader = extras.getString("lectora");
             //The key argument here must match that used in the other activity
         }
-        idSpotSelected   =  getSpotSelected();
+        idCageSelected   =  getSpotSelected();
      
-        getTurnoAcual();
+     //   getTurnoAcual();
 
         initSound();
         Thread thread = new Thread(
@@ -360,12 +366,12 @@ public class ServicioAPI extends Service {
         Cursor cursor = null;
 
         try {
-            cursor = db.rawQuery("SELECT * FROM spots WHERE status='activo' AND selected='activo'", null);
+            cursor = db.rawQuery("SELECT * FROM cages WHERE status='activo' AND selected='activo'", null);
 
                 if (cursor.moveToFirst()) {//Buscar el activo
-                            spotSelected =  new Spots(cursor.getInt(0),cursor.getString(1),cursor.getString(2),
-                                    cursor.getString(3),cursor.getString(4),cursor.getString(5));
-                           id = spotSelected.getId();
+                            cageSelected =  new Cages(cursor.getInt(0),cursor.getString(1),cursor.getString(2),
+                                    cursor.getString(3),cursor.getString(4),cursor.getString(5),cursor.getString(6),cursor.getString(7));
+                           id = cageSelected.getId();
                 }
 
 
@@ -469,10 +475,16 @@ public class ServicioAPI extends Service {
             while (loopFlag) {
                 uhftagInfo = mReaderChainway.readTagFromBuffer();
                 if (uhftagInfo != null) {
-                    msg = handler.obtainMessage();
-                    msg.obj = uhftagInfo;
-                    msg.what=1;
-                    handler.sendMessage(msg);
+                    try {
+                        msg = handler.obtainMessage();
+                        msg.obj = uhftagInfo;
+                        msg.what=1;
+                        handler.sendMessage(msg);
+                        sleep(timeAntenna * 60000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+
                    // Toast.makeText(ServicioAPI.this,"asd"+uhftagInfo.getEPC(),Toast.LENGTH_SHORT).show();
                  //   Log.d("epc:",uhftagInfo.getEPC());
 

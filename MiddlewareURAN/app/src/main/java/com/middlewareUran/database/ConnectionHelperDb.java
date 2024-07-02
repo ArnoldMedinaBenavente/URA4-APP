@@ -20,6 +20,9 @@ public class ConnectionHelperDb extends SQLiteOpenHelper {
     final String CREATE_TABLE_ERRORS = "CREATE TABLE errors (idRegistry INTEGER PRIMARY KEY, error TEXT,date TEXT)";
     final String CREATE_TABLE_TAGS = "CREATE TABLE tags (idRegistry INTEGER PRIMARY KEY, id TEXT,epc TEXT, idStation TEXT)";
 
+    final String CREATE_TABLE_CAGES = "CREATE TABLE cages (idRegistry INTEGER PRIMARY KEY, id TEXT,id_customer TEXT,code TEXT," +
+            "manager TEXT,status TEXT,selected TEXT, name_customer TEXT)";
+
     public ConnectionHelperDb(@Nullable Context context, @Nullable String name, @Nullable SQLiteDatabase.CursorFactory factory, int version) {
         super(context, name, factory, version);
     }
@@ -33,7 +36,7 @@ public class ConnectionHelperDb extends SQLiteOpenHelper {
         db.execSQL(CREATE_TABLE_STATIONS_LOG);
         db.execSQL(CREATE_TABLE_ERRORS);
         db.execSQL(CREATE_TABLE_TAGS);
-
+        db.execSQL(CREATE_TABLE_CAGES);
     }
 
     @Override

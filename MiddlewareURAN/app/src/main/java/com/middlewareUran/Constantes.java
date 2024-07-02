@@ -2,7 +2,7 @@ package com.middlewareUran;
 
 public class Constantes {
     static String port;
-     String urlApi = "https://cemex.grupohqh.com/api";
+     String urlApi = "http://wurth.grupohqh.com/api";
 
 
 

@@ -38,6 +38,7 @@ import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.middlewareUran.Objects.Cages;
 import com.middlewareUran.Objects.Spots;
 import com.middlewareUran.Objects.Station;
 import com.middlewareUran.Objects.StationLog;
@@ -59,12 +60,14 @@ public class MainActivity extends AppCompatActivity {
     TextView txtStatus;
     TextView txt_selected_galera;
     ListView listView_tags;
-    Spinner spinnerPowerAntenna,spinner_area;
+    Spinner spinnerPowerAntenna,spinner_area,spinnerTimeAntenna;
     Constantes constantes = new Constantes();
     Context context = MainActivity.this;
     ArrayList<String> spotsList = new ArrayList<>();
     Spots spotSelected = null;
-    ArrayList<Spots> arrayListSpots = new ArrayList<>();
+    Cages cagesSelected = null;
+
+    ArrayList<Cages> arrayListSpots = new ArrayList<>();
     static ArrayList<Tags> arrayListTags = new ArrayList<>();
     static ArrayList<String> arrayepc = new ArrayList<>();
     static ArrayList<Station> arrayListStations = new ArrayList<>();
@@ -77,6 +80,7 @@ static TagsAdapter tagsAdapter;
         setContentView(R.layout.activity_main);
         //Setear variable spinner de power antenna
         spinnerPowerAntenna = (Spinner)findViewById(R.id.spinnerPowerAntenna);
+        spinnerTimeAntenna = (Spinner)findViewById(R.id.spinnerTimeAntenna);
 
         //Variable de puerto para servidor TCP.
         botonComenzar = (Button) findViewById(R.id.botonComenzar);
@@ -120,7 +124,7 @@ static TagsAdapter tagsAdapter;
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onClick(View v) {
-                if (spotSelected != null ) {
+                if (cagesSelected != null ) {
 
                     if (botonComenzar.getText().equals("COMENZAR SERVICIO")) {
                         //Seteando puerto para servidor TCP
@@ -129,6 +133,7 @@ static TagsAdapter tagsAdapter;
                         botonComenzar.setText("PARAR SERVICIO");
                         Intent comienzaIntent = new Intent(MainActivity.this, ServicioAPI.class);
                         comienzaIntent.putExtra("powerAntenna", Integer.parseInt(spinnerPowerAntenna.getSelectedItem().toString()));
+                        comienzaIntent.putExtra("timeAntenna", Integer.parseInt(spinnerTimeAntenna.getSelectedItem().toString()));
                         comienzaIntent.setAction("comenzarMiddleWare");
                         startForegroundService(comienzaIntent);
                     } else {
@@ -170,7 +175,7 @@ static TagsAdapter tagsAdapter;
             public void onErrorResponse(VolleyError error) {
                 queue.stop();
                 registryErrorToDataBase(error.toString());
-                Toast.makeText(MainActivity.this,"error", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this,"error al descargar la información", Toast.LENGTH_LONG).show();
             }
         }){
         };
@@ -180,16 +185,16 @@ static TagsAdapter tagsAdapter;
 
     public void updateDataBase(JSONObject info){
         try {
-            JSONArray jsonArray_spots = info.getJSONArray("spots");
-            JSONArray jsonArray_stations = info.getJSONArray("stations");
+            JSONArray jsonArray_cages = info.getJSONArray("cages");
+/*            JSONArray jsonArray_stations = info.getJSONArray("stations");
             JSONArray jsonArray_stationsLog = info.getJSONArray("stationsLog");
             JSONArray jsonArray_tags = info.getJSONArray("tags");
-
-            updateSpotsToDataBase(jsonArray_spots);
-            updateStationsToDataBase(jsonArray_stations);
+*/
+            updateCagesToDataBase(jsonArray_cages);
+ /*           updateStationsToDataBase(jsonArray_stations);
             updateStationsLogToDataBase(jsonArray_stationsLog);
             updateTagsToDataBase(jsonArray_tags);
-
+*/
 
         } catch (JSONException e) {
             registryErrorToDataBase(String.valueOf(e));
@@ -204,6 +209,7 @@ static TagsAdapter tagsAdapter;
             botonComenzar.setText("PARAR SERVICIO");
             Intent comienzaIntent = new Intent(MainActivity.this, ServicioAPI.class);
             comienzaIntent.putExtra("powerAntenna", Integer.parseInt(spinnerPowerAntenna.getSelectedItem().toString()));
+            comienzaIntent.putExtra("timeAntenna", Integer.parseInt(spinnerTimeAntenna.getSelectedItem().toString()));
             comienzaIntent.setAction("comenzarMiddleWare");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(comienzaIntent);
@@ -307,28 +313,34 @@ static TagsAdapter tagsAdapter;
         connection.close();
     }
 
-    public void updateSpotsToDataBase(JSONArray spots){
+    public void updateCagesToDataBase(JSONArray cages){
+        Log.e("MensajeCages", String.valueOf(cages));
         ConnectionHelperDb connection = new ConnectionHelperDb(MainActivity.this,"database",null,1);
         SQLiteDatabase db = connection.getWritableDatabase();
         try {
-            String SQL_UPDATE_SPOTS = "UPDATE spots SET status = 'inactivo', selected = 'inactivo'";
+            String SQL_UPDATE_SPOTS = "UPDATE cages SET status = 'inactivo', selected = 'inactivo'";
             db.execSQL(SQL_UPDATE_SPOTS);
-            spotSelected = null;
+            cagesSelected = null;
             txt_selected_galera.setText("");
 
 
-            for (int i = 0; i < spots.length(); i++) {
-                String id  =  spots.getJSONObject(i).getString("id");
-                String code  =  spots.getJSONObject(i).getString("code");
-                String name  =  spots.getJSONObject(i).getString("name");
+            for (int i = 0; i < cages.length(); i++) {
+                String id  =  cages.getJSONObject(i).getString("id");
+                String id_customer =  cages.getJSONObject(i).getString("id_customer");
+                String code  =  cages.getJSONObject(i).getString("code");
+                String manager  =  cages.getJSONObject(i).getString("manager");
+                String name_customer  =  cages.getJSONObject(i).getString("name_customer");
                 ContentValues values = new ContentValues();
                 values.put("id", id);
+                values.put("id_customer", id_customer);
                 values.put("code", code);
-                values.put("name", name);
+                values.put("manager", manager);
                 values.put("status", "activo");
                 values.put("selected", "inactivo");
+                values.put("name_customer", name_customer);
                 // Insertar la nueva fila
-                db.insert("spots", null, values);
+                db.insert("cages", null, values);
+
             }
 
 
@@ -340,6 +352,8 @@ static TagsAdapter tagsAdapter;
             connection.close();
         }
         validationInfo();
+
+
     }
 
     public void updateStationsToDataBase(JSONArray stations){
@@ -415,8 +429,8 @@ static TagsAdapter tagsAdapter;
             registryErrorToDataBase(e.getMessage());
         } finally {
             // Cerrar la base de datos
-            db.close();
-            connection.close();
+           //db.close();
+           // connection.close();
         }
     }
 
@@ -458,20 +472,20 @@ static TagsAdapter tagsAdapter;
         Cursor cursor = null;
 
         try {
-            cursor = db.rawQuery("SELECT * FROM spots WHERE status='activo'", null);
+            cursor = db.rawQuery("SELECT * FROM cages WHERE status='activo'", null);
             arrayListSpots.clear();
             spotsList.clear();
             if (cursor.moveToFirst()) {
                 do {
-                    spotsList.add(cursor.getString(3)); // Asumiendo que la primera columna es el nombre
-                    Spots spot  = new Spots(cursor.getInt(0),cursor.getString(1),cursor.getString(2),
-                                                cursor.getString(3),cursor.getString(4),cursor.getString(5));
-                    arrayListSpots.add(spot);
+                    spotsList.add("ID:" +cursor.getString(1)+ "  CODE:" +cursor.getString(3)+ "  CLIENTE: " +cursor.getString(7)); // Asumiendo que la primera columna es el nombre
+                    Cages cage  = new Cages(cursor.getInt(0),cursor.getString(1),cursor.getString(2),
+                                                cursor.getString(3),cursor.getString(4),cursor.getString(5),cursor.getString(6),cursor.getString(7));
+                    arrayListSpots.add(cage);
                 } while (cursor.moveToNext());
             }
 
             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-            builder.setTitle("Elige una galera");
+            builder.setTitle("Elige una jaula");
 
             // Convertir ArrayList en un array para usar en AlertDialog
                         final String[] spotsArray = spotsList.toArray(new String[0]);
@@ -510,32 +524,22 @@ static TagsAdapter tagsAdapter;
         Cursor cursor = null;
 
         try {
-            cursor = db.rawQuery("SELECT * FROM spots WHERE status='activo'", null);
+            cursor = db.rawQuery("SELECT * FROM cages WHERE status='activo'", null);
 
             if(cursor.getCount() > 0 ){//hay spots activos
 
                 if (cursor.moveToFirst()) {//Buscar el activo
                     do {
-                        if(cursor.getString(5).equals("activo")) {
-                             spotSelected =  new Spots(cursor.getInt(0),cursor.getString(1),cursor.getString(2),
-                                                            cursor.getString(3),cursor.getString(4),cursor.getString(5));
-                           // txt_selected_galera.setText(spotSelected.getName());
-                            showStations(spotSelected);
+                        if(cursor.getString(6).equals("activo")) {
+                             cagesSelected =  new Cages(cursor.getInt(0),cursor.getString(1),cursor.getString(2),
+                                                            cursor.getString(3),cursor.getString(4),cursor.getString(5),cursor.getString(6),cursor.getString(7));
+                           txt_selected_galera.setText("ID:"+cagesSelected.getId()+"  CODE:"+cagesSelected.getCode()+"  CLIENTE:"+cagesSelected.getName_customer());
+                         //   showStations(spotSelected);
                         }
                     } while (cursor.moveToNext());
                 }
-                if (spotSelected == null) {
+                if (cagesSelected == null) {
                     showAlertSelectedSpot();
-                }else{//si ya tiene un spot seleccionado entonces validamos que alla un turno iniciado
-                   Cursor cursorTurno = null;
-                   cursorTurno = db.rawQuery("SELECT * FROM turnos WHERE estado = 'activo'",null);
-                    if(cursorTurno.getCount() > 0 ) {//hay un turno activo
-                        if (cursorTurno.moveToFirst()) {
-                                  updateCountTagsToStations();
-                        }
-                    }else{
-                        showAlertInitTurno();
-                    }
                 }
             }else{//descargar la informacion
                 downloadInfoDataBase();
@@ -654,17 +658,17 @@ public void initTurno(){
 
 
 
-    public void registrySpotSlected(Spots spot){
+    public void registrySpotSlected(Cages cage){
         ConnectionHelperDb connection = new ConnectionHelperDb(MainActivity.this, "database", null, 1);
         SQLiteDatabase db = connection.getReadableDatabase();
         Cursor cursor = null;
 
         try {
-            String SQL_UPDATE_SPOTS = "UPDATE spots SET selected = 'inactivo'";
+            String SQL_UPDATE_SPOTS = "UPDATE cages SET selected = 'inactivo'";
             db.execSQL(SQL_UPDATE_SPOTS);
             txt_selected_galera.setText("");
 
-            String SQL_UPDATE_SPOTS_SELECTED = "UPDATE spots  SET selected = 'activo' WHERE idRegistry = "+spot.getIdRegistry()+" ";
+            String SQL_UPDATE_SPOTS_SELECTED = "UPDATE cages  SET selected = 'activo' WHERE idRegistry = "+cage.getIdRegistry()+" ";
             db.execSQL(SQL_UPDATE_SPOTS_SELECTED);
 
         } catch (Exception e) {

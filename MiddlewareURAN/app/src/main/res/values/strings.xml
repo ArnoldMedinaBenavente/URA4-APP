@@ -19,9 +19,17 @@
 
     <string-array name="opciones_array">
         <item>Actualizar posiciones</item>
-        <item>Actualizar galeras</item>
-        <item>Seleccionar galera</item>
+        <item>Actualizar jaulas</item>
+        <item>Seleccionar jaula</item>
         <item>Actualizar todo</item>
+    </string-array>
+
+    <string-array name="time_antenna_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
     </string-array>
 
 </resources>
